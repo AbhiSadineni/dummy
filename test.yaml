@@ -1,0 +1,53 @@
+substitutions:
+  _REGION: us-central1
+  _REPO: cloud-run-repo
+  _IMAGE: my-app
+  _SERVICE_NAME: my-app
+  _ALLOW_DEPLOY: "false"  
+
+steps:
+# -----------------------------
+# 1️⃣ Build Docker image
+# -----------------------------
+- name: gcr.io/cloud-builders/docker
+  id: build-image
+  args:
+    - build
+    - -t
+    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+    - .
+
+# -----------------------------
+# 2️⃣ Push Docker image
+# -----------------------------
+- name: gcr.io/cloud-builders/docker
+  id: push-image
+  args:
+    - push
+    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+
+# -----------------------------
+# 3️⃣ Conditional Cloud Run deploy
+# -----------------------------
+- name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  id: conditional-deploy
+  entrypoint: bash
+  args:
+    - -c
+    - |
+        if [ "$_ALLOW_DEPLOY" = "true" ]; then
+          echo "🚀 Deploying to Cloud Run..."
+          gcloud run deploy $_SERVICE_NAME \
+            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA \
+            --region=$_REGION \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=4Gi \
+            --cpu=2
+        else
+          echo "⏭️ Skipping Cloud Run deploy (_ALLOW_DEPLOY=$_ALLOW_DEPLOY)"
+        fi
+
+images:
+- ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
