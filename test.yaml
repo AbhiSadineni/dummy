@@ -1,53 +1,31 @@
-substitutions:
-  _REGION: us-central1
-  _REPO: cloud-run-repo
-  _IMAGE: my-app
-  _SERVICE_NAME: my-app
-  _ALLOW_DEPLOY: "false"  
-
-steps:
-# -----------------------------
-# 1️⃣ Build Docker image
-# -----------------------------
-- name: gcr.io/cloud-builders/docker
-  id: build-image
-  args:
-    - build
-    - -t
-    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
-    - .
-
-# -----------------------------
-# 2️⃣ Push Docker image
-# -----------------------------
-- name: gcr.io/cloud-builders/docker
-  id: push-image
-  args:
-    - push
-    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
-
-# -----------------------------
-# 3️⃣ Conditional Cloud Run deploy
-# -----------------------------
-- name: gcr.io/google.com/cloudsdktool/cloud-sdk
-  id: conditional-deploy
-  entrypoint: bash
-  args:
-    - -c
-    - |
-        if [ "$_ALLOW_DEPLOY" = "true" ]; then
-          echo "🚀 Deploying to Cloud Run..."
-          gcloud run deploy $_SERVICE_NAME \
-            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA \
-            --region=$_REGION \
-            --platform=managed \
-            --allow-unauthenticated \
-            --port=8080 \
-            --memory=4Gi \
-            --cpu=2
-        else
-          echo "⏭️ Skipping Cloud Run deploy (_ALLOW_DEPLOY=$_ALLOW_DEPLOY)"
-        fi
-
 images:
 - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+steps:
+- args:
+  - build
+  - -t
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+  - .
+  id: build-image
+  name: gcr.io/cloud-builders/docker
+- args:
+  - push
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+  id: push-image
+  name: gcr.io/cloud-builders/docker
+- args:
+  - -c
+  - "if [ \"$_ALLOW_DEPLOY\" = \"true\" ]; then\n  echo \"\U0001F680 Deploying to\
+    \ Cloud Run...\"\n  gcloud run deploy $_SERVICE_NAME \\\n    --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA\
+    \ \\\n    --region=$_REGION \\\n    --platform=managed \\\n    --allow-unauthenticated\
+    \ \\\n    --port=8080 \\\n    --memory=4Gi \\\n    --cpu=2\nelse\n  echo \"\u23ED\
+    \uFE0F Skipping Cloud Run deploy (_ALLOW_DEPLOY=$_ALLOW_DEPLOY)\"\nfi\n"
+  entrypoint: bash
+  id: conditional-deploy
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk
+substitutions:
+  _ALLOW_DEPLOY: 'false'
+  _IMAGE: my-app
+  _REGION: india
+  _REPO: cloud-run-repo
+  _SERVICE_NAME: my-app
