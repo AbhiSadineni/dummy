@@ -1,5 +1,5 @@
 images:
-- ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA
+- new test
 steps:
 - args:
   - build
@@ -15,11 +15,7 @@ steps:
   name: gcr.io/cloud-builders/docker
 - args:
   - -c
-  - "if [ \"$_ALLOW_DEPLOY\" = \"true\" ]; then\n  echo \"\U0001F680 Deploying to\
-    \ Cloud Run...\"\n  gcloud run deploy $_SERVICE_NAME \\\n    --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA\
-    \ \\\n    --region=$_REGION \\\n    --platform=managed \\\n    --allow-unauthenticated\
-    \ \\\n    --port=8080 \\\n    --memory=4Gi \\\n    --cpu=2\nelse\n  echo \"\u23ED\
-    \uFE0F Skipping Cloud Run deploy (_ALLOW_DEPLOY=$_ALLOW_DEPLOY)\"\nfi\n"
+  - "if [ \"$_ALLOW_DEPLOY\" = \"true\" ]; then\n  echo \"\U0001F680 Deploying to Cloud Run...\"\n  gcloud run deploy $_SERVICE_NAME \\\n    --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA \\\n    --region=$_REGION \\\n    --platform=managed \\\n    --allow-unauthenticated \\\n    --port=8080 \\\n    --memory=4Gi \\\n    --cpu=2\nelse\n  echo \"⏭️ Skipping Cloud Run deploy (_ALLOW_DEPLOY=$_ALLOW_DEPLOY)\"\nfi\n"
   entrypoint: bash
   id: conditional-deploy
   name: gcr.io/google.com/cloudsdktool/cloud-sdk
